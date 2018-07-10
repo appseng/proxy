@@ -24,25 +24,20 @@ class Proxy {
     protected $params = [];
     private $snoopy;
 
-    public function __construct($proxyPageParam = 'proxy_page', $proxyHostParam = 'proxy_host', $proxyResetParam = 'proxy_reset', $proxyURLParam = 'proxy_url', $proxyPathParam = 'proxy_path') {
+    public function __construct($proxyPageParam = 'proxy_page', $proxyHostParam = 'proxy_host', $proxyResetParam = 'proxy_reset') {
         $this->params['proxyPageParam'] = $proxyPageParam;
         $this->params['proxyHostParam'] = $proxyHostParam;
-        $this->params['proxyPathParam'] = $proxyPathParam;
         $this->params['proxyResetParam'] = $proxyResetParam;
-        $this->params['proxyURLParam'] = $proxyURLParam;
     }
 
     public function show() {      
-        session_start();
-        
+        session_start();        
         if (isset($_GET[$this->params['proxyResetParam']]) || !$this->checkTimeout()) {
             $this->reset();
             return false;
         }
         $page = isset($_GET[$this->params['proxyPageParam']]) ? $_GET[$this->params['proxyPageParam']] : '';
         $host = isset($_SESSION[$this->params['proxyHostParam']]) ? $_SESSION[$this->params['proxyHostParam']] : '';
-        $path = isset($_SESSION[$this->params['proxyPathParam']]) ? $_SESSION[$this->params['proxyPathParam']] : '';
-        
         if ($host !== '' || $page !== '') {
             $sPage = '';
             $sHost = '';
@@ -67,15 +62,6 @@ class Proxy {
                 $sPage = count($m) > 0? $m[0] : '';
                 $sDir =  $page;//current directory
             }
-            /*
-            echo '$page='.$page;
-            echo '$sHost='.$sHost;
-            echo '$sPath='.$sPath;
-            echo '$sPage='.$sPage;
-            echo '$sDir='.$sDir;
-            $_SESSION[$this->params['proxyHostParam']] = $sHost;
-            $_SESSION[$this->params['proxyHostParam']] = $sPath;
-            */
             $params = "?";
             $i = 0;
             foreach ($_GET as $key => $value) {
@@ -90,34 +76,18 @@ class Proxy {
                 }
             }            
             $urlPage = '';
-            /*if (isset($_GET[$this->params['proxyURLParam']])) {
-                $urlPage = $_SESSION["{$_GET[$this->params['proxyURLParam']]}"];
-                $isOutURL = strpos($urlPage, "http://") !== false || strpos($urlPage, "https://") !== false;
-                if ($isOutURL) {
-                    $this->reset(false);
-                    header('Location: /proxy/index.php?' . $this->params['proxyPageParam'] . '=' . $urlPage );
-                    return true;
-                }
-                $sPath = $urlPage;
-            }*/
             $params = (strlen($params) == 1) ? '' : $params;
             $URL =  $sHost . $sPath . $params;
-
             $pageHTML = $this->fetchPage($URL);
-
             $pageHTML = preg_replace("/action=(\"|')?\/(\"|')?/", "action=\"" . $sHost . "\"", $pageHTML);
-            
             $pageHTML = preg_replace("~target=(\"|')?_blank(\"|')?~", '', $pageHTML);
-
             $pageHTML = preg_replace_callback("~<(img|script|link)[^>]*(href|src)=(['\"]?)(.*)\.(jpeg|jpg|png|css|js)['|\"]?[^>/]*([/]?>)~im", function($m) use($sDir,$sHost,$sPage) {
-                //print_r($m);
-                if (preg_match("~^http~i", $m[4]) === 1)
+                if (preg_match("~^http~i", $m[4]) === 1) {
                     return "{$m[0]}";
-
+                }
                 $URL1 = '';
                 $rel = '';
                 $type = '';
-
                 if (strpos($m[0],'type="text/css"') > 0) {
                     $type = 'type="text/css"';
                 }
@@ -129,6 +99,7 @@ class Proxy {
                 }
                 elseif (strpos($m[4], '..') == 0) {
                     $URL1 = "$sDir{$m[4]}.{$m[5]}";
+                    $URL1 = str_replace('/.../','/../', $URL1);
                     $URL1 = $this->parentLinkReplace($URL1);
                 }
                 else {//(strpos($sPage, '/') == 0) {
@@ -148,27 +119,18 @@ class Proxy {
                 //relative url
                 if (preg_match('~^(\.\./)?([^/]*)(/\.|/)?$~', $linkEx, $m1) == 1) {
                     $linkEx = (count($m1) > 0) ? $sDir . $m1[0] : '';
-
                     $linkEx = str_replace('/.../','/../', $linkEx);
                 }
                 $linkEx = $this->parentLinkReplace($linkEx);
-
                 $replacement = '/proxy/index.php?' . $this->params['proxyPageParam'] . '=' . $linkEx;
                 return "<a {$m[1]} href=\"$replacement\" {$m[3]}>";
             }, $pageHTML);
-
             $this->echoPage($URL, $pageHTML);
         } else {
             $this->echoDefault();
         }
     }
-    private function parentLinkReplace($URL) {
-        while (preg_match('~(/[^/]+/\.\./)~', $URL, $murl) == 1)
-        {
-            $URL = str_replace($murl[1],'/', $URL);
-        }
-        return $URL;
-    }
+
     protected function fetchPage($URL) {
         $this->snoopy = new Snoopy;
         $this->snoopy->fetch($URL);
@@ -207,9 +169,8 @@ class Proxy {
             $_SESSION['timeout'] = time();
             return true;
         }
-        if ($_SESSION['timeout'] + 10 * 60 < time()) {
+        if ($_SESSION['timeout'] + 10 * 60 < time())
             return false;
-        } 
         return true;
     }
 
@@ -218,5 +179,12 @@ class Proxy {
         session_destroy();
         if ($redirect)
             header('Location: .');
+    }
+
+    private function parentLinkReplace($URL) {
+        while (preg_match('~(/[^/]+/\.\./)~', $URL, $murl) == 1) {
+            $URL = str_replace($murl[1],'/', $URL);
+        }    
+        return $URL;
     }
 }
