@@ -1,10 +1,10 @@
 <?php
 /*************************************************
  *
- * Proxy - Web-pages simple proxy
+ * SimpleProxy - Web-pages simple proxy
  * Author: Dmitry Kuznetsov <appseng@yandex.ru>
- * Copyright (c): 2017, all rights reserved
- * Version: 1.1.0
+ * Copyright (c): 2017-2018, all rights reserved
+ * Version: 1.1.2
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -24,33 +24,24 @@ class Proxy {
     protected $params = [];
     private $snoopy;
 
-    public function __construct($proxyPageParam = 'proxy_page', $proxyHostParam = 'proxy_host', $proxyResetParam = 'proxy_reset') {
+    public function __construct($proxyPageParam = 'proxy_page', $proxyResetParam = 'proxy_reset') {
         $this->params['proxyPageParam'] = $proxyPageParam;
-        $this->params['proxyHostParam'] = $proxyHostParam;
         $this->params['proxyResetParam'] = $proxyResetParam;
     }
 
     public function show() {      
-        session_start();        
-        if (isset($_GET[$this->params['proxyResetParam']]) || !$this->checkTimeout()) {
+        if (isset($_GET[$this->params['proxyResetParam']])) {
             $this->reset();
             return false;
         }
         $page = isset($_GET[$this->params['proxyPageParam']]) ? $_GET[$this->params['proxyPageParam']] : '';
-        $host = isset($_SESSION[$this->params['proxyHostParam']]) ? $_SESSION[$this->params['proxyHostParam']] : '';
-        if ($host !== '' || $page !== '') {
+        if ($page !== '') {
             $sPage = '';
             $sHost = '';
             $sPath = '';
             $sDir = '';
-            $isOutURL = strpos($page, "http://") !== false || strpos($page, "https://") !== false;
             $pu = parse_url($page);
-            if ($isOutURL) { //user defines url of a site to proxy it
-                $sHost = $pu['scheme'] . '://' . $pu['host'];
-            } 
-            else {
-                $sHost =  $host;                    
-            }
+            $sHost = $pu['scheme'] . '://' . $pu['host'];
             $sPath = preg_replace('~^' . $sHost . '~', '', $page);//url - scheme - host
             preg_match('~/[^/]*[?]?.*~', $page, $m);
             if (count($m) > 0) {// only file
@@ -74,56 +65,58 @@ class Proxy {
                 else {
                     $params .= "&{$key}={$value}";
                 }
-            }            
-            $urlPage = '';
+            }
             $params = (strlen($params) == 1) ? '' : $params;
             $URL =  $sHost . $sPath . $params;
             $pageHTML = $this->fetchPage($URL);
-            $pageHTML = preg_replace("/action=(\"|')?\/(\"|')?/", "action=\"" . $sHost . "\"", $pageHTML);
+            //$pageHTML = preg_replace("/action=(\"|')?\/(\"|')?/", "action=\"" . $sHost . "\"", $pageHTML);
             $pageHTML = preg_replace("~target=(\"|')?_blank(\"|')?~", '', $pageHTML);
-            $pageHTML = preg_replace_callback("~<(img|script|link)[^>]*(href|src)=(['\"]?)(.*)\.(jpeg|jpg|png|css|js)['|\"]?[^>/]*([/]?>)~im", function($m) use($sDir,$sHost,$sPage) {
-                if (preg_match("~^http~i", $m[4]) === 1) {
-                    return "{$m[0]}";
-                }
-                $URL1 = '';
-                $rel = '';
-                $type = '';
-                if (strpos($m[0],'type="text/css"') > 0) {
-                    $type = 'type="text/css"';
-                }
-                if (strpos($m[0],'rel="stylesheet"') > 0) {
-                    $rel = 'rel="stylesheet"';
-                }
-                if (strpos($m[4], '/') == 0) {
-                    $URL1 = "$sHost{$m[4]}.{$m[5]}";
-                }
-                elseif (strpos($m[4], '..') == 0) {
-                    $URL1 = "$sDir{$m[4]}.{$m[5]}";
-                    $URL1 = str_replace('/.../','/../', $URL1);
-                    $URL1 = $this->parentLinkReplace($URL1);
-                }
-                else {//(strpos($sPage, '/') == 0) {
-                    $parse = parse_url($sHost);
-                    $host = $parse['host'];
-                    $host = (strrpos($host, '/') == strlen($host)-1) ? substr($host,0,strlen($host)-2) : $host;
-                    $URL1 =  $parse['scheme'] .'://'. $host . $sPage;
-                }
-                return "<{$m[1]} $rel $type {$m[2]}=\"/proxy/get_url.php?url=$URL1\"{$m[6]}";
-            }, $pageHTML);
-            $pageHTML = preg_replace_callback("~<a([^>]*)href=['\"]?([^>'\"\b]*)['\"\b]?([^>]*)>~im", function($m)use($sHost,$sPage,$sDir) {
-                $linkEx = $m[2];
+            //proxy img|script|link|input
+            $pageHTML = preg_replace_callback("~<(img|script|link|input)(\s[^>]*?\s*)(href|src)=['\"]?([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|css|js)([^>'\"\s]*)['\"\s]?([^>]*)>~im", function($m) use($sDir, $sHost, $pu) {
+                $src = $m[4].'.'.$m[5].$m[6];
                 //absolute url
-                if (preg_match('~^(htt[p]?:/)?(/.*)~', $linkEx, $m0) == 1) {
-                    $linkEx = $sHost. $m0[2];
+                if (preg_match('~^(https?:/)?(/.*)~', $src, $m0) == 1) {
+                    $su = parse_url($src);
+                    if (!isset($su['host'])) {
+                        $urlHost = (empty($m0[1]))? $sHost : '';
+                        $src = $urlHost.$src;
+                    } elseif (!isset($su['scheme'])) {
+                        $src = $pu['scheme']. ':' . $src;
+                    }          
+                } else {//relative URL
+                    $src = $sDir.$src;
+                    $src = str_replace('/.../','/../', $src);
+                    $src = $this->parentLinkReplace($src);
+                }
+                
+                return "<{$m[1]}{$m[2]}{$m[3]}=\"/proxy/get_url.php?url=$src\"{$m[7]}>";
+            }, $pageHTML);
+            //proxy anchors
+            $pageHTML = preg_replace_callback("~<a(\s[^>]*?\s*)href=[\"']?([^>'\"\s]*)['\"\s]?([^>]*)>~i", function($m) use($sHost, $sDir, $pu) {
+                $link = $m[2];
+                //ignore magnet links
+                if (preg_match('~^magnet:~', $link) == 1) {
+                    return $m[0];
+                }
+                //absolute url
+                if (preg_match('~^(https?:/)?(/.*)~', $link, $m0) == 1) {
+                    //$link = $sHost. $m0[2];
+                    $lu = parse_url($link);
+                    if (!isset($lu['host'])) {
+                        $urlHost = (empty($m0[1]))? $sHost : '';
+                        $link = $urlHost.$link;
+                    } elseif (!isset($lu['scheme'])) {
+                        $link = $pu['scheme']. ':' . $link;
+                    }  
                 }
                 //relative url
-                if (preg_match('~^(\.\./)?([^/]*)(/\.|/)?$~', $linkEx, $m1) == 1) {
-                    $linkEx = (count($m1) > 0) ? $sDir . $m1[0] : '';
-                    $linkEx = str_replace('/.../','/../', $linkEx);
+                if (preg_match('~^(\.\./)?([^/]*)(/\.|/)?$~', $link, $m1) == 1) {
+                    $link = $sDir . $m1[0];
+                    $link = str_replace('/.../','/../', $link);
+                    $link = $this->parentLinkReplace($link);
                 }
-                $linkEx = $this->parentLinkReplace($linkEx);
-                $replacement = '/proxy/index.php?' . $this->params['proxyPageParam'] . '=' . $linkEx;
-                return "<a {$m[1]} href=\"$replacement\" {$m[3]}>";
+                $replacement = '/proxy/index.php?' . $this->params['proxyPageParam'] . '=' . $link;
+                return "<a{$m[1]}href=\"$replacement\"{$m[3]}>";
             }, $pageHTML);
             $this->echoPage($URL, $pageHTML);
         } else {
@@ -156,7 +149,7 @@ class Proxy {
             <div style="margin: 10px auto; width: 230px;">
                 <form action="index.php" method="GET">
                     <label for="<?= $this->params['proxyPageParam'] ?>">Page URL:</label>
-                    <input type="text" name="<?= $this->params['proxyPageParam'] ?>">
+                    <input type="text" name="<?= $this->params['proxyPageParam'] ?>" value="http://" placeholder="http://">
                 </form>
             </div>        
         </body>
@@ -164,21 +157,8 @@ class Proxy {
     <?php
     }
 
-    protected function checkTimeout() {
-        if (!isset($_SESSION['timeout'])) {
-            $_SESSION['timeout'] = time();
-            return true;
-        }
-        if ($_SESSION['timeout'] + 10 * 60 < time())
-            return false;
-        return true;
-    }
-
-    protected function reset($redirect = true) {
-        session_unset();
-        session_destroy();
-        if ($redirect)
-            header('Location: .');
+    protected function reset() {
+        header('Location: .');
     }
 
     private function parentLinkReplace($URL) {
