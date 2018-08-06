@@ -72,7 +72,7 @@ class Proxy {
             //$pageHTML = preg_replace("/action=(\"|')?\/(\"|')?/", "action=\"" . $sHost . "\"", $pageHTML);
             $pageHTML = preg_replace("~target=(\"|')?_blank(\"|')?~", '', $pageHTML);
             //proxy img|script|link|input
-            $pageHTML = preg_replace_callback("~<(img|script|link|input)(\s[^>]*?\s*)(href|src)=['\"]?([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|css|js)([^>'\"\s]*)['\"\s]?([^>]*)>~im", function($m) use($sDir, $sHost, $pu) {
+            $pageHTML = preg_replace_callback("~<(img|script|link|input|meta)(\s[^>]*?\s*)(href|src|content)=['\"]?([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|css|js)([^>'\"\s]*)['\"\s]?([^>]*)>~im", function($m) use($sDir, $sHost, $pu) {
                 $src = $m[4].'.'.$m[5].$m[6];
                 //absolute url
                 if (preg_match('~^(https?:/)?(/.*)~', $src, $m0) == 1) {

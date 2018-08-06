@@ -9,7 +9,7 @@ if (isset($_GET['url'])) {
     $ct = '';
     if (preg_match("~(jpeg|jpg|png|gif|svg)$~", $fileExt) == 1) {
         $ct ='image';
-        if ($fileExt = 'svg') {
+        if ($fileExt == 'svg') {
             $fileExt = 'svg+xml';
         }
     } elseif (preg_match("~(js|css)$~", $fileExt) == 1) {
