@@ -165,8 +165,9 @@ class Proxy {
         <body>
             <div style="margin: 10px auto; width: 230px;">
                 <form action="index.php" method="GET">
-                    <label for="<?= $this->params['proxyPageParam'] ?>">Page URL:</label>
-                    <input type="text" name="<?= $this->params['proxyPageParam'] ?>" value="http://" placeholder="http://">
+                    <label for="<?= $this->params['proxyPageParam'] ?>">Page: </label>
+                    <input type="text" name="<?= $this->params['proxyPageParam'] ?>" value="https://" placeholder="https://">
+                    <input type="submit" value="Go">
                 </form>
             </div>        
         </body>
