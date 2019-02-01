@@ -148,7 +148,7 @@ class Proxy {
     }
 
     protected function echoPage($URL, $pageHTML) {
-        echo 'You are currently on "' . $URL . '" <a href="/web-proxy/index.php?' . $this->params['proxyResetParam'] . '=exit"><strong>Click</strong> to leave</a>';
+        echo 'You are currently on "' . $URL . '" <a href="/proxy/index.php?' . $this->params['proxyResetParam'] . '=exit"><strong>Click</strong> to leave</a>';
         echo $pageHTML;
     }
 
