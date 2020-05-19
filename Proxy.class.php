@@ -38,7 +38,7 @@ class Proxy {
         $page = isset($_GET[$this->params['proxyPageParam']]) ? $_GET[$this->params['proxyPageParam']] : '';
 
         $validHostnameRegex = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])";
-        if ($page !== '' && preg_match("~$validHostnameRegex~", $page) == 1) {
+        if ($page !== '' && preg_match("~^https?://$validHostnameRegex~", $page) == 1) {
             $sPage = '';
             $sHost = '';
             $sPath = '';
@@ -129,14 +129,54 @@ class Proxy {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta http-equiv="X-UA-Compatible" content="ie=edge">
-            <title>Web-pages simple proxy</title>
+            <title>Simple web-proxy</title>
+            <style>
+                * { 
+                    margin: 0;
+                    padding: 0;                    
+                }
+                body, html {
+                    height: 100%;
+                }
+                body {
+                    background-color: #333;
+                }
+                .center {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100%;
+                }
+                label {
+                    color: #5b6dcd;
+                    font-size: 48px;
+                }
+                input {
+                    font-size: 36px;
+                    color: lightblue;
+                    background-color: #5b6dcd;
+                }
+                input[type="submit"] {
+                    border-radius: 50% 20% / 10% 40%;
+                    border: #5b6dcd solid 15px;             
+                }
+                input[type="text"] {
+                    border: #5b6dcd solid 15px;                                       
+                    border-radius: 15px;
+                }
+                form {
+                    border-left: #5b6dcd solid 15px;
+                    padding: 10px;
+                    background-color: #ddd;
+                }
+            </style>
         </head>
         <body>
-            <div style="margin: 10px auto; width: 230px;">
+            <div class="center">
                 <form action="index.php" method="GET">
                     <label for="<?= $this->params['proxyPageParam'] ?>">Page: </label>
                     <input type="text" name="<?= $this->params['proxyPageParam'] ?>" value="https://" placeholder="https://">
-                    <input type="submit" value="Go">
+                    <input type="submit" value=" Go ">
                 </form>
             </div>        
         </body>
