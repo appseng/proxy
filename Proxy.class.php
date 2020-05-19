@@ -147,7 +147,7 @@ class Proxy {
                 $URL = $scheme . $URL;
             } 
         }//relative url    
-        elseif (preg_match('~^(\.\.?/)?.*#.*~', $URL, $m1) == 1) {
+        elseif (preg_match('~^(\.\.?/)?(.*#)?.*~', $URL, $m1) == 1) {
             $URL = $sHost. $sPath . $URL;
         }        
         
