@@ -57,8 +57,10 @@ class Proxy {
                 if ($key === $this->params['proxyPageParam']) {
                     if (strrpos($value, '?') > 0) {
                         $param = explode('?', $value)[1];
-                        $pKV = explode('=', $param);
-                        $params .= "{$pKV[0]}={$pKV[1]}";
+                        if (strrpos($param, '=') > 0) {
+                            $pKV = explode('=', $param);
+                            $params .= "{$pKV[0]}={$pKV[1]}";
+                        }
                     }
                 } else {
                     $params .= "&{$key}={$value}";
