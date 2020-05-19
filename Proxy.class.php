@@ -4,7 +4,7 @@
  * SimpleProxy - a simple web-proxy
  * Author: Dmitry Kuznetsov <appseng@yandex.ru>
  * Copyright (c): 2017-2019, all rights reserved
- * Version: 0.2.2
+ * Version: 0.3.2
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
