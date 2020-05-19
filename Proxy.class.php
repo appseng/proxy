@@ -37,8 +37,8 @@ class Proxy {
         }
         $page = isset($_GET[$this->params['proxyPageParam']]) ? $_GET[$this->params['proxyPageParam']] : '';
 
-        $validHostnameRegex = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])";
-        if ($page !== '' && preg_match("~^https?://$validHostnameRegex~", $page) == 1) {
+        $validHostnameRegex = "^https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9/])*";
+        if ($page !== '' && preg_match("~$validHostnameRegex~", $page) == 1) {
             $sPage = '';
             $sHost = '';
             $sPath = '';
@@ -55,7 +55,7 @@ class Proxy {
             preg_match('~(/[^?&]*)[?]?.*~', $sPath, $m);
 
             if (count($m) > 0) {// only file
-                $pageURL = substr($pageParam, 0, strrpos($pageParam,'/')+1);
+                $pageURL = substr($page, 0, strrpos($page,'/')+1);
             }
             else {// only last directory
                 preg_match('~/[^/]*(/?)$~', $page, $m);
