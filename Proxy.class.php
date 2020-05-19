@@ -37,7 +37,7 @@ class Proxy {
         }
         $page = isset($_GET[$this->params['proxyPageParam']]) ? $_GET[$this->params['proxyPageParam']] : '';
 
-        $validHostnameRegex = "^https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9/])*";
+        $validHostnameRegex = "^https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9/]))*";
         if ($page !== '' && preg_match("~$validHostnameRegex~", $page) == 1) {
             $sPage = '';
             $sHost = '';
@@ -51,7 +51,7 @@ class Proxy {
             }
             $scheme = $pu['scheme'] . ':';
             $sHost = $scheme . '//' . $pu['host'];
-            $sPath = preg_replace('~^' . $sHost . '~', '', $page);//url - scheme - host
+            $sPath = preg_replace("~^$sHost~", '', $page);//url - scheme - host
             preg_match('~(/[^?&]*)[?]?.*~', $sPath, $m);
 
             if (count($m) > 0) {// only file
@@ -80,32 +80,32 @@ class Proxy {
             $pageHTML = $this->fetchPage($URL);
             $pageHTML = preg_replace("~target=(\"|')?_blank(\"|')?~", '', $pageHTML);
 
-            //proxy img|script|link|input
-            $pageHTML = preg_replace_callback("~<(img|script|link|input|meta)(\s[^>]*?\s*)(href|src|content)=['\"]?([^>'\"\s]*)(\.)?(jpeg|jpg|gif|png|svg|css|js|ico)([^>'\"\s]*)['\"\s]?([^>]*)>~im", function($m) use($sDir, $sHost, $scheme) {
+            //proxy img|script|link|input|meta
+            $pageHTML = preg_replace_callback("~<(img|script|link|input|meta)(\s[^>]*?\s*)(href|src|content)=['\"]?([^>'\"\s]*)(\.)?(jpeg|jpg|gif|png|svg|css|js|ico)([^>'\"\s]*)['\"\s]?([^>]*)>~im", function($m) use($sDir, $sHost, $scheme, $sPath) {
                 $src = $m[4].$m[5].$m[6].$m[7];
-                $src = $this->linkReplace($src, $scheme, $sHost, $sDir);
+                $src = $this->replaceLink($src, $scheme, $sHost, $sDir, $sPath);
                 return "<{$m[1]}{$m[2]}{$m[3]}=\"{$this->params['proxyDirParam']}/get.php?u=$src\"{$m[8]}>";
             }, $pageHTML);
 
             //proxy style="... url() ..."
-            $pageHTML = preg_replace_callback("~<([^>]*)style=['\"]?([^>'\"]*)url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|ico)([^>'\"\s\)]*)\)([^>\"\']*)['\"]?([^>]*)>~im", function($m) use($sDir, $sHost, $scheme) {
+            $pageHTML = preg_replace_callback("~<([^>]*)style=['\"]?([^>'\"]*)url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|ico)([^>'\"\s\)]*)\)([^>\"\']*)['\"]?([^>]*)>~im", function($m) use($sDir, $sHost, $scheme, $sPath) {
                 $src = $m[3].'.'.$m[4].$m[5];
-                $src = $this->linkReplace($src, $scheme, $sHost, $sDir);                
+                $src = $this->replaceLink($src, $scheme, $sHost, $sDir, $sPath);                
                 return "<{$m[1]}style=\"{$m[2]}url({$this->params['proxyDirParam']}/get.php?u=$src){$m[6]}\"{$m[7]}>";
             }, $pageHTML);
 
             //proxy anchors
-            $pageHTML = preg_replace_callback("~<a(\s[^>]*?\s*)href=[\"']?([^>'\"\s]*)['\"\s]?([^>]*)>~i", function($m) use($sHost, $sDir, $scheme) {
+            $pageHTML = preg_replace_callback("~<a(\s[^>]*?\s*)href=[\"']?([^>'\"\s]*)['\"\s]?([^>]*)>~i", function($m) use($sHost, $sDir, $scheme, $sPath) {
                 $link = $m[2];
                 //ignore magnet links
                 if (preg_match('~^magnet:~', $link) == 1) {
                     return $m[0];
                 }
-                $link = $this->linkReplace($link, $scheme, $sHost, $sDir);
+                $link = $this->replaceLink($link, $scheme, $sHost, $sDir, $sPath);
                 $replacement = $this->params['proxyDirParam'] . '/index.php?' . $this->params['proxyPageParam'] . '=' . $link;
                 return "<a{$m[1]}href=\"$replacement\"{$m[3]}>";
             }, $pageHTML);
-            $this->echoPage($URL, $pageHTML);
+            $this->echoPage($pageHTML);
         } else {
             $this->echoDefault();
         }
@@ -117,7 +117,7 @@ class Proxy {
         return $this->snoopy->getResults();
     }
 
-    protected function echoPage($URL, $pageHTML) {
+    protected function echoPage($pageHTML) {
         echo $pageHTML;
     }
 
@@ -149,21 +149,26 @@ class Proxy {
         header('Location: .');
     }
 
-    private function linkReplace($URL, $scheme, $sHost, $sDir) {
+    private function replaceLink($URL, $scheme, $sHost, $sDir, $sPath) {
         //absolute url
         if (preg_match('~^(https?:)?(//?.*)~', $URL, $m0) == 1) {
             //$link = $sHost. $m0[2];
             $lu = parse_url($URL);
+            // echo $URL;
             if (!isset($lu['host'])) {
                 $urlHost = (empty($m0[1]))? $sHost : '';
-                $URL = $urlHost.$URL;
+                $URL = $urlHost . $URL;
             } elseif (!isset($lu['scheme'])) {
                 $URL = $scheme . $URL;
-            }  
-        }//relative url
+            } 
+        }//anchors on page
+        elseif (preg_match('~#.*~', $URL, $m0) == 1) {
+            $URL = $sHost . $sPath . $URL;
+        }//relative url    
         elseif (preg_match('~^(\.\./)?.*$~', $URL, $m1) == 1) {
-            $URL = $sDir . $m1[0];
+            $URL = $sDir . $URL;
         }
+        
         
         // remote parent directory link '..'
         $URL = preg_replace('~//?\.?\.\./~','/../', $URL);
