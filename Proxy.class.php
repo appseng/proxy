@@ -24,17 +24,12 @@ class Proxy {
     protected $params = [];
     private $snoopy;
 
-    public function __construct($proxyDirParam = '/proxy', $proxyPageParam = 'proxy_page', $proxyResetParam = 'proxy_reset') {
+    public function __construct($proxyDirParam = '/proxy', $proxyPageParam = 'proxy_page') {
         $this->params['proxyPageParam'] = $proxyPageParam;
-        $this->params['proxyResetParam'] = $proxyResetParam;
         $this->params['proxyDirParam'] = $proxyDirParam;
     }
 
     public function show() {      
-        if (isset($_GET[$this->params['proxyResetParam']])) {
-            $this->reset();
-            return false;
-        }
         $page = isset($_GET[$this->params['proxyPageParam']]) ? $_GET[$this->params['proxyPageParam']] : '';
 
         $validHostnameRegex = "^https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9/]))*";
@@ -143,10 +138,6 @@ class Proxy {
         </body>
         </html>
     <?php
-    }
-
-    protected function reset() {
-        header('Location: .');
     }
 
     private function replaceLink($URL, $scheme, $sHost, $sDir, $sPath) {
