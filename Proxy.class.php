@@ -61,23 +61,22 @@ class Proxy {
                 preg_match('~/[^/]*(/?)$~', $page, $m);
                 $sPage = count($m) > 0? $m[0] : '';
                 $sDir =  $page . $m[1];//current directory
-
             }
-            $puPath = preg_replace('~[?].*$~', '', $puPath);
-            $pageParams = "?";
+            $sPath = preg_replace('~[?].*$~', '', $sPath);
+            $params = "?";
             foreach ($_GET as $key => $value) {
                 if ($key === $this->params['proxyPageParam']) {
                     if (strrpos($value, '?') > 0) {
                         $param = explode('?', $value)[1];
                         $pKV = explode('=', $param);
-                        $pageParams .= "{$pKV[0]}={$pKV[1]}";
+                        $params .= "{$pKV[0]}={$pKV[1]}";
                     }
                 } else {
-                    $pageParams .= "&{$key}={$value}";
+                    $params .= "&{$key}={$value}";
                 }
             }
-            $pageParams = (strlen($pageParams) == 1) ? '' : $pageParams;
-            $URL =  $puHost . $puPath . $pageParams;
+            $params = (strlen($params) == 1) ? '' : $params;
+            $URL =  $sHost . $sPath . $params;
             $pageHTML = $this->fetchPage($URL);
             $pageHTML = preg_replace("~target=(\"|')?_blank(\"|')?~", '', $pageHTML);
 
@@ -119,7 +118,6 @@ class Proxy {
     }
 
     protected function echoPage($URL, $pageHTML) {
-        //echo 'You are currently on "' . $URL . '" <a href="/' . $this->params['proxyDirParam'] . '/index.php?' . $this->params['proxyResetParam'] . '=exit"><strong>Click</strong> to leave</a>';
         echo $pageHTML;
     }
 
