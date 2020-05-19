@@ -19,14 +19,19 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *************************************************/
-class Proxy {
+
+require_once "Util.class.php";
+
+ class Proxy {
 
     protected $params = [];
     private $snoopy;
+    private $util;
 
     public function __construct($proxyDirParam = '/proxy', $proxyPageParam = 'proxy_page') {
         $this->params['proxyPageParam'] = $proxyPageParam;
         $this->params['proxyDirParam'] = $proxyDirParam;
+        $this->util = new Util;
     }
 
     public function show() {      
@@ -35,17 +40,13 @@ class Proxy {
         $validHostnameRegex = "^https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9/]))*";
         if ($page !== '' && preg_match("~$validHostnameRegex~", $page) == 1) {
             $sPage = '';
-            $sHost = '';
-            $sPath = '';
-            $scheme = 'http:';
-            $pu = parse_url($page);
-            if (empty($pu['scheme'])) {
-                $page = $scheme . '//' . $page;
-                $pu = parse_url($page); 
-            }
-            $scheme = $pu['scheme'] . ':';
-            $sHost = $scheme . '//' . $pu['host'];
-            $sPath = preg_replace("~^$sHost~", '', $page);//url - scheme - host
+
+            $this->util->setSchemeHostPath($page);
+
+            $sHost = $this->util->host;
+            $sPath = $this->util->path;
+            $scheme = $this->util->scheme;
+
             preg_match('~(/[^?&]*)[?]?.*~', $sPath, $m);
 
             if (count($m) > 0) {// only file
@@ -56,14 +57,17 @@ class Proxy {
             foreach ($_GET as $key => $value) {
                 if ($key === $this->params['proxyPageParam']) {
                     if (strrpos($value, '?') > 0) {
-                        $param = explode('?', $value)[1];
-                        if (strrpos($param, '=') > 0) {
-                            $pKV = explode('=', $param);
-                            $params .= "{$pKV[0]}={$pKV[1]}";
+                        $param = explode('?', $value);
+                        if(count($param) > 0) {
+                            $param = $param[1];
+                            if (strpos($param, '=') > 0) {
+                                $pKV = explode('=', $param);
+                                $params .= "{$pKV[0]}={$pKV[1]}";
+                            }
                         }
                     }
                 } else {
-                    $params .= "&{$key}={$value}";
+                    $params .= "&$key=$value";
                 }
             }
             $params = (strlen($params) == 1) ? '' : $params;
@@ -137,27 +141,6 @@ class Proxy {
     }
 
     private function replaceLink($URL, $scheme, $sHost, $sPath) {
-        //absolute url
-        if (preg_match('~^(https?:)?(//?.*)~', $URL, $m0) == 1) {
-            $lu = parse_url($URL);
-            if (!isset($lu['host'])) {
-                $urlHost = (empty($m0[1]))? $sHost : '';
-                $URL = $urlHost . $URL;
-            } elseif (!isset($lu['scheme'])) {
-                $URL = $scheme . $URL;
-            } 
-        }//relative url    
-        elseif (preg_match('~^(\.\.?/)?(.*#)?.*~', $URL, $m1) == 1) {
-            $URL = $sHost. $sPath . $URL;
-        }        
-        
-        // remote parent directory link '..'
-        $URL = preg_replace('~//?\.?\.\./~','/../', $URL);
-        while (preg_match('~(/[^/]+/\.\./)~', $URL, $murl) == 1) {
-            $URL = str_replace($murl[1],'/', $URL);
-        }
-        $URL = str_replace('/./','/', $URL);
-
-        return $URL;
+        return $this->util->replaceLink($URL, $scheme, $sHost, $sPath);
     }
 }
