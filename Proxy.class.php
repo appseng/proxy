@@ -4,7 +4,7 @@
  * SimpleProxy - a simple web-proxy
  * Author: Dmitry Kuznetsov <appseng@yandex.ru>
  * Copyright (c): 2017-2019, all rights reserved
- * Version: 0.3.2
+ * Version: 0.3.3
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -130,46 +130,7 @@ class Proxy {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta http-equiv="X-UA-Compatible" content="ie=edge">
             <title>Simple web-proxy</title>
-            <style>
-                * { 
-                    margin: 0;
-                    padding: 0;                    
-                }
-                body, html {
-                    height: 100%;
-                }
-                body {
-                    background-color: #333;
-                }
-                .center {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100%;
-                }
-                label {
-                    color: #5b6dcd;
-                    font-size: 48px;
-                }
-                input {
-                    font-size: 36px;
-                    color: lightblue;
-                    background-color: #5b6dcd;
-                }
-                input[type="submit"] {
-                    border-radius: 50% 20% / 10% 40%;
-                    border: #5b6dcd solid 15px;             
-                }
-                input[type="text"] {
-                    border: #5b6dcd solid 15px;                                       
-                    border-radius: 15px;
-                }
-                form {
-                    border-left: #5b6dcd solid 15px;
-                    padding: 10px;
-                    background-color: #ddd;
-                }
-            </style>
+            <link rel="stylesheet" href="style.css">
         </head>
         <body>
             <div class="center">
