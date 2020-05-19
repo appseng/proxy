@@ -19,8 +19,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *************************************************/
-
- class Proxy {
+class Proxy {
 
     protected $params = [];
     private $snoopy;
@@ -54,30 +53,31 @@
             $sHost = $scheme . '//' . $pu['host'];
             $sPath = preg_replace('~^' . $sHost . '~', '', $page);//url - scheme - host
             preg_match('~(/[^?&]*)[?]?.*~', $sPath, $m);
+
             if (count($m) > 0) {// only file
-                $sPage = $m[1];
-                $sDir = substr($page, 0, strrpos($page,'/')+1);
+                $pageURL = substr($pageParam, 0, strrpos($pageParam,'/')+1);
             }
             else {// only last directory
                 preg_match('~/[^/]*(/?)$~', $page, $m);
                 $sPage = count($m) > 0? $m[0] : '';
                 $sDir =  $page . $m[1];//current directory
+
             }
-            $sPath = preg_replace('~[?].*$~', '', $sPath);
-            $params = "?";
+            $puPath = preg_replace('~[?].*$~', '', $puPath);
+            $pageParams = "?";
             foreach ($_GET as $key => $value) {
                 if ($key === $this->params['proxyPageParam']) {
                     if (strrpos($value, '?') > 0) {
                         $param = explode('?', $value)[1];
                         $pKV = explode('=', $param);
-                        $params .= "{$pKV[0]}={$pKV[1]}";
+                        $pageParams .= "{$pKV[0]}={$pKV[1]}";
                     }
                 } else {
-                    $params .= "&{$key}={$value}";
+                    $pageParams .= "&{$key}={$value}";
                 }
             }
-            $params = (strlen($params) == 1) ? '' : $params;
-            $URL =  $sHost . $sPath . $params;
+            $pageParams = (strlen($pageParams) == 1) ? '' : $pageParams;
+            $URL =  $puHost . $puPath . $pageParams;
             $pageHTML = $this->fetchPage($URL);
             $pageHTML = preg_replace("~target=(\"|')?_blank(\"|')?~", '', $pageHTML);
 
@@ -136,8 +136,9 @@
         <body>
             <div style="margin: 10px auto; width: 230px;">
                 <form action="index.php" method="GET">
-                    <label for="<?= $this->params['proxyPageParam'] ?>">Page URL:</label>
+                    <label for="<?= $this->params['proxyPageParam'] ?>">Page: </label>
                     <input type="text" name="<?= $this->params['proxyPageParam'] ?>" value="https://" placeholder="https://">
+                    <input type="submit" value="Go">
                 </form>
             </div>        
         </body>
