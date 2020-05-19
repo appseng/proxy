@@ -3,7 +3,7 @@
  *
  * SimpleProxy - a simple web-proxy
  * Author: Dmitry Kuznetsov <appseng@yandex.ru>
- * Copyright (c): 2017-2019, all rights reserved
+ * Copyright (c): 2017-2020, all rights reserved
  * Version: 0.3.3
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -137,9 +137,7 @@ class Proxy {
     private function replaceLink($URL, $scheme, $sHost, $sPath) {
         //absolute url
         if (preg_match('~^(https?:)?(//?.*)~', $URL, $m0) == 1) {
-            //$link = $sHost. $m0[2];
             $lu = parse_url($URL);
-            // echo $URL;
             if (!isset($lu['host'])) {
                 $urlHost = (empty($m0[1]))? $sHost : '';
                 $URL = $urlHost . $URL;
