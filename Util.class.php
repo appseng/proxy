@@ -25,6 +25,9 @@ class Util {
         $link .= '://' . $host;
         //absolute url
         if (preg_match('~^(https?:)?(//?[^/]*)(.*)~', $url, $m) == 1) {
+            if (preg_match('~^/[^/]*$~', $m[2]) == 1) {
+                $link .=  $m[2];
+            }
             $link .=  $m[3];
         }//relative url
         else {
