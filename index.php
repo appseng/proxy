@@ -4,7 +4,7 @@
  * SimpleProxy - Web-pages simple proxy
  * Author: Dmitry Kuznetsov <appseng@yandex.ru>
  * Copyright (c): 2017-2018, all rights reserved
- * Version: 0.3.2
+ * Version: 0.3.4
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -24,6 +24,7 @@ mb_internal_encoding("UTF-8");
 
 require_once "Snoopy.class.php";
 require_once "Proxy.class.php";
+require_once "settings.php";
 
-$proxy = new Proxy;
+$proxy = new Proxy($proxyDirParam, $proxyPageParam, $proxyGetPHP);
 $proxy->show();

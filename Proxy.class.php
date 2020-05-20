@@ -4,7 +4,7 @@
  * SimpleProxy - a simple web-proxy
  * Author: Dmitry Kuznetsov <appseng@yandex.ru>
  * Copyright (c): 2017-2020, all rights reserved
- * Version: 0.3.3
+ * Version: 0.3.4
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -22,16 +22,19 @@
 
 require_once "Util.class.php";
 
- class Proxy {
+class Proxy {
 
     protected $params = [];
     private $snoopy;
     private $util;
+    private $URL;
+    private $pageHTML;
 
-    public function __construct($proxyDirParam = '/proxy', $proxyPageParam = 'proxy_page') {
+    public function __construct($proxyDirParam = '/proxy', $proxyPageParam = 'proxy_page', $proxyGetPHP = 'get.php') {
         $this->params['proxyPageParam'] = $proxyPageParam;
         $this->params['proxyDirParam'] = $proxyDirParam;
-        $this->util = new Util;
+        $this->params['getPHP'] = $proxyGetPHP;
+        $this->util = new Util($proxyPageParam);
     }
 
     public function show() {      
@@ -39,81 +42,63 @@ require_once "Util.class.php";
 
         $validHostnameRegex = "^https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9/]))*";
         if ($page !== '' && preg_match("~$validHostnameRegex~", $page) == 1) {
-            $sPage = '';
+            $this->URL = $this->util->getURL($page);
+            //echo $this->URL;
+            $this->fetchPage();
 
-            $this->util->setSchemeHostPath($page);
-
-            $sHost = $this->util->host;
-            $sPath = $this->util->path;
-            $scheme = $this->util->scheme;
-
-            preg_match('~(/[^?&]*)[?]?.*~', $sPath, $m);
-
-            if (count($m) > 0) {// only file
-                $pageURL = substr($page, 0, strrpos($page,'/')+1);
-            }
-            $sPath = preg_replace('~[?].*$~', '', $sPath);
-            $params = "?";
-            foreach ($_GET as $key => $value) {
-                if ($key === $this->params['proxyPageParam']) {
-                    if (strrpos($value, '?') > 0) {
-                        $param = explode('?', $value);
-                        if(count($param) > 0) {
-                            $param = $param[1];
-                            if (strpos($param, '=') > 0) {
-                                $pKV = explode('=', $param);
-                                $params .= "{$pKV[0]}={$pKV[1]}";
-                            }
-                        }
-                    }
-                } else {
-                    $params .= "&$key=$value";
-                }
-            }
-            $params = (strlen($params) == 1) ? '' : $params;
-            $URL =  $sHost . $sPath . $params;
-            $pageHTML = $this->fetchPage($URL);
-            $pageHTML = preg_replace("~target=(\"|')?_blank(\"|')?~", '', $pageHTML);
-
+            $this->pageHTML = preg_replace("~target=(\"|')?_blank(\"|')?~", '', $this->pageHTML);
+            
+            $util = $this->util;
             //proxy img|script|link|input|meta
-            $pageHTML = preg_replace_callback("~<(img|script|link|input|meta)(\s[^>]*?\s*)(href|src|content)=['\"]?([^>'\"\s]*)(\.)?(jpeg|jpg|gif|png|svg|css|js|ico)([^>'\"\s]*)['\"\s]?([^>]*)>~im", function($m) use($sHost, $scheme, $sPath) {
+            $this->pageHTML = preg_replace_callback("~<(img|script|link|input|meta)(\s[^>]*?\s*)(href|src|content)=['\"]?([^>'\"\s]*)(\.)?(jpeg|jpg|gif|png|svg|css|js|ico)([^>'\"\s]*)['\"\s]?([^>]*)>~im", function($m) use($util) {
                 $src = $m[4].$m[5].$m[6].$m[7];
-                $src = $this->replaceLink($src, $scheme, $sHost, $sPath);
-                return "<{$m[1]}{$m[2]}{$m[3]}=\"{$this->params['proxyDirParam']}/get.php?u=$src\"{$m[8]}>";
-            }, $pageHTML);
+                $src = $util->replaceLink($src);
+                return "<{$m[1]}{$m[2]}{$m[3]}=\"{$this->params['proxyDirParam']}/{$this->params['getPHP']}?u=$src\"{$m[8]}>";
+            }, $this->pageHTML);
 
             //proxy style="... url() ..."
-            $pageHTML = preg_replace_callback("~<([^>]*)style=['\"]?([^>'\"]*)url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|ico)([^>'\"\s\)]*)\)([^>\"\']*)['\"]?([^>]*)>~im", function($m) use($sHost, $scheme, $sPath) {
+            $this->pageHTML = preg_replace_callback("~<([^>]*)style=['\"]?([^>'\"]*)url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|ico)([^>'\"\s\)]*)\)([^>\"\']*)['\"]?([^>]*)>~im", function($m) use($util) {
                 $src = $m[3].'.'.$m[4].$m[5];
-                $src = $this->replaceLink($src, $scheme, $sHost, $sPath);                
-                return "<{$m[1]}style=\"{$m[2]}url({$this->params['proxyDirParam']}/get.php?u=$src){$m[6]}\"{$m[7]}>";
-            }, $pageHTML);
+                $src = $util->replaceLink($src);                
+                return "<{$m[1]}style=\"{$m[2]}url({$this->params['proxyDirParam']}/{$this->params['getPHP']}?u=$src){$m[6]}\"{$m[7]}>";
+            }, $this->pageHTML);
+
+            //proxy <style>: { }...url() ...}"
+            $this->pageHTML = preg_replace_callback("~<style(\s[^>]*?\s*)?>(\s[^<>]*?\s*)?</style>~im", function($m) use($util) {
+                $style = $m[2];
+                $style = preg_replace_callback("~url(\s)*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|ico)\)~im", function($mi) use($util) {
+                    $src = $mi[2] . '.' . $mi[3];
+                    $src = $util->replaceLink($src);
+                    return "url(\"{$this->params['proxyDirParam']}/{$this->params['getPHP']}?u=$src\")";
+                }, $style);
+                return "<style{$m[1]}>{$style}</style>";
+            }, $this->pageHTML);
 
             //proxy anchors
-            $pageHTML = preg_replace_callback("~<a(\s[^>]*?\s*)href=[\"']?([^>'\"\s]*)['\"\s]?([^>]*)>~i", function($m) use($sHost, $scheme, $sPath) {
+            $this->pageHTML = preg_replace_callback("~<a(\s[^>]*?\s*)href=[\"']?([^>'\"\s]*)['\"\s]?([^>]*)>~i", function($m) use($util) {
                 $link = $m[2];
                 //ignore magnet links
                 if (preg_match('~^magnet:~', $link) == 1) {
                     return $m[0];
                 }
-                $link = $this->replaceLink($link, $scheme, $sHost, $sPath);
+                $link = $util->replaceLink($link);
                 $replacement = $this->params['proxyDirParam'] . '/index.php?' . $this->params['proxyPageParam'] . '=' . $link;
                 return "<a{$m[1]}href=\"$replacement\"{$m[3]}>";
-            }, $pageHTML);
-            $this->echoPage($pageHTML);
+            }, $this->pageHTML);
+            $this->echoPage();
         } else {
             $this->echoDefault();
         }
     }
 
-    protected function fetchPage($URL) {
+    protected function fetchPage() {
         $this->snoopy = new Snoopy;
-        $this->snoopy->fetch($URL);
-        return $this->snoopy->getResults();
+        $this->snoopy->fetch($this->URL);
+        $this->pageHTML = $this->snoopy->getResults();
     }
 
-    protected function echoPage($pageHTML) {
-        echo $pageHTML;
+    protected function echoPage() {
+        echo $this->pageHTML;
     }
 
     protected function echoDefault() {
@@ -140,7 +125,7 @@ require_once "Util.class.php";
     <?php
     }
 
-    private function replaceLink($URL, $scheme, $sHost, $sPath) {
-        return $this->util->replaceLink($URL, $scheme, $sHost, $sPath);
+    private function replaceLink() {
+        return $this->util->replaceLink($this->URL);
     }
 }

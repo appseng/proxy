@@ -39,19 +39,16 @@ if (isset($_GET['u'])) {
         $contents = $snoopy->getResults();
 
         if ($type === 'css') {
+            require_once "settings.php";
             require_once "Util.class.php";
-            $util = new Util;
+            $util = new Util($proxyPageParam);
 
-            $util->setSchemeHostPath($filename);
+            $filename = $util->getURL($filename);
 
-            $sHost = $util->host;
-            $sPath = $util->path;
-            $scheme = $util->scheme;
-
-            $contents = preg_replace_callback("~url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg)~im", function($m) use($util, $sHost, $scheme, $sPath) {
+            $contents = preg_replace_callback("~url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg)~im", function($m) use($util, $proxyGetPHP) {
                 $src = $m[1] . '.' . $m[2];                
-                $src = $util->replaceLink($src, $scheme, $sHost, $sPath);                
-                return "url(/proxy/get.php?u=$src";
+                $src = $util->replaceLink($src);                
+                return "url({$util->params['proxyPageParam']}/$proxyGetPHP?u=$src";
             }, $contents);
         }
         header("Content-type: $ct/$type");
