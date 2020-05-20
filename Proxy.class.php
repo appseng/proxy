@@ -65,13 +65,16 @@ class Proxy {
 
             //proxy <style>: { }...url() ...}"
             $this->pageHTML = preg_replace_callback("~<style(\s[^>]*?\s*)?>(\s[^<>]*?\s*)?</style>~im", function($m) use($util) {
-                $style = $m[2];
-                $style = preg_replace_callback("~url(\s)*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|ico)\)~im", function($mi) use($util) {
-                    $src = $mi[2] . '.' . $mi[3];
-                    $src = $util->replaceLink($src);
-                    return "url(\"{$this->params['proxyDirParam']}/{$this->params['getPHP']}?u=$src\")";
-                }, $style);
-                return "<style{$m[1]}>{$style}</style>";
+                $style = empty($m[2]) ? '' : $m[2];
+                $add = empty($m[1]) ? '' : $m[1];
+                if (!empty($style)) {
+                    $style = preg_replace_callback("~url(\s)*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|ico)\)~im", function($mi) use($util) {
+                        $src = $mi[2] . '.' . $mi[3];
+                        $src = $util->replaceLink($src);
+                        return "url(\"{$this->params['proxyDirParam']}/{$this->params['getPHP']}?u=$src\")";
+                    }, $style);
+                }
+                return "<style$add>$style</style>";
             }, $this->pageHTML);
 
             //proxy anchors
