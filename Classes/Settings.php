@@ -2,6 +2,6 @@
 
 class Settings {
     public $proxyDirParam = '/proxy';
-    public $proxyPageParam = 'proxy_page';
+    public $proxyPageParam = 'proxiedPage';
     public $proxyGetPHP = 'get.php';
 }
