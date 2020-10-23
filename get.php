@@ -1,5 +1,6 @@
 <?php
 mb_internal_encoding("UTF-8");
+spl_autoload_register();
 
 if (isset($_GET['u'])) {
     $validFileRegex = "^(https?://)?([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,350}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9/]))*";
@@ -33,18 +34,19 @@ if (isset($_GET['u'])) {
         if($ext[1] === 'css') {
             $type = 'css';
         }
-        require_once "Snoopy.class.php";
+        
         $snoopy = new Snoopy;
         $snoopy->fetch($filename);
         $contents = $snoopy->getResults();
 
         if ($type === 'css') {
-            require_once "settings.php";
-            require_once "Util.class.php";
-            $util = new Util($proxyPageParam);
+            
+            $settings = new Settings;
+            $util = new Util($settings->proxyPageParam);
 
             $filename = $util->getURL($filename);
 
+            $proxyGetPHP = $settings->proxyGetPHP;
             $contents = preg_replace_callback("~url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg)~im", function($m) use($util, $proxyGetPHP) {
                 $src = $m[1] . '.' . $m[2];                
                 $src = $util->replaceLink($src);                
@@ -52,8 +54,6 @@ if (isset($_GET['u'])) {
             }, $contents);
         }
         header("Content-type: $ct/$type");
-    } else {
-        $contents = file_get_contents($filename);
     }
     echo $contents;
 }

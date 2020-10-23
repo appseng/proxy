@@ -1,5 +1,7 @@
 <?php
 
-$proxyDirParam = '/proxy';
-$proxyPageParam = 'proxy_page';
-$proxyGetPHP = 'get.php';
+class Settings {
+    public $proxyDirParam = '/proxy';
+    public $proxyPageParam = 'proxy_page';
+    public $proxyGetPHP = 'get.php';
+}

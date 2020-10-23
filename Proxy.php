@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *************************************************/
 
-require_once "Util.class.php";
-
 class Proxy {
 
     protected $params = [];
@@ -64,7 +62,7 @@ class Proxy {
             }, $this->pageHTML);
 
             //proxy <style>: { }...url() ...}"
-            $this->pageHTML = preg_replace_callback("~<style(\s[^>]*?\s*)?>(\s[^<>]*?\s*)?</style>~im", function($m) use($util) {
+            $this->pageHTML = preg_replace_callback("~<style([^>]*)?>(\s[^<>]*?\s*)?</style>~im", function($m) use($util) {
                 $style = empty($m[2]) ? '' : $m[2];
                 $add = empty($m[1]) ? '' : $m[1];
                 if (!empty($style)) {

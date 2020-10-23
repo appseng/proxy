@@ -21,10 +21,9 @@
  *************************************************/
 
 mb_internal_encoding("UTF-8");
+spl_autoload_register();
 
-require_once "Snoopy.class.php";
-require_once "Proxy.class.php";
-require_once "settings.php";
+$settings = new Settings;
 
-$proxy = new Proxy($proxyDirParam, $proxyPageParam, $proxyGetPHP);
+$proxy = new Proxy($settings->proxyDirParam, $settings->proxyPageParam, $settings->proxyGetPHP);
 $proxy->show();
