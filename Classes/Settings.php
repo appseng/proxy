@@ -1,5 +1,4 @@
 <?php
-namespace Classes;
 
 class Settings {
     public $proxyDirParam = '/proxy';

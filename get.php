@@ -1,8 +1,8 @@
 <?php
-namespace Main;
-
 mb_internal_encoding("UTF-8");
-spl_autoload_register();
+spl_autoload_register(function($class) {
+    require_once "Classes/$class.php";
+});
 
 if (isset($_GET['u'])) {
     $validFileRegex = "^(https?://)?([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,350}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9/]))*";
@@ -37,14 +37,14 @@ if (isset($_GET['u'])) {
             $type = 'css';
         }
         
-        $snoopy = new \Classes\Snoopy;
+        $snoopy = new Snoopy;
         $snoopy->fetch($filename);
         $contents = $snoopy->getResults();
 
         if ($type === 'css') {
             
-            $settings = new \Classes\Settings;
-            $util = new \Classes\Util($settings->proxyPageParam);
+            $settings = new Settings;
+            $util = new Util($settings->proxyPageParam);
 
             $filename = $util->getURL($filename);
 
