@@ -7,6 +7,7 @@ body, html {
 }
 body {
     background-color: #333;
+    font-family: Verdana, Geneva, sans-serif;
 }
 .center {
     display: flex;
@@ -15,8 +16,8 @@ body {
     height: 100%;
 }
 label {
+    font-size: 40px;
     color: #5b6dcd;
-    font-size: 48px;
 }
 input {
     font-size: 36px;
