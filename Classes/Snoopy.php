@@ -26,6 +26,8 @@
  * http://snoopy.sourceforge.net/
  *************************************************/
 
+namespace Classes;
+
 class Snoopy
 {
     /**** Public variables ****/

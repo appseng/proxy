@@ -1,4 +1,6 @@
 <?php
+namespace Main;
+
 mb_internal_encoding("UTF-8");
 spl_autoload_register();
 
@@ -35,14 +37,14 @@ if (isset($_GET['u'])) {
             $type = 'css';
         }
         
-        $snoopy = new Snoopy;
+        $snoopy = new \Classes\Snoopy;
         $snoopy->fetch($filename);
         $contents = $snoopy->getResults();
 
         if ($type === 'css') {
             
-            $settings = new Settings;
-            $util = new Util($settings->proxyPageParam);
+            $settings = new \Classes\Settings;
+            $util = new \Classes\Util($settings->proxyPageParam);
 
             $filename = $util->getURL($filename);
 

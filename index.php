@@ -20,10 +20,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *************************************************/
 
+namespace Main;
+
 mb_internal_encoding("UTF-8");
 spl_autoload_register();
 
-$settings = new Settings;
+$settings = new \Classes\Settings;
 
-$proxy = new Proxy($settings->proxyDirParam, $settings->proxyPageParam, $settings->proxyGetPHP);
+$proxy = new \Classes\Proxy($settings->proxyDirParam, $settings->proxyPageParam, $settings->proxyGetPHP);
 $proxy->show();

@@ -20,6 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *************************************************/
 
+namespace Classes;
+
 class Proxy {
 
     protected $params = [];
@@ -111,7 +113,7 @@ class Proxy {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta http-equiv="X-UA-Compatible" content="ie=edge">
             <title>Simple web-proxy</title>
-            <link rel="stylesheet" href="style.css">
+            <link rel="stylesheet" href="css/style.css">
         </head>
         <body>
             <div class="center">
