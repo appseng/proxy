@@ -42,8 +42,8 @@ class Proxy {
         
         if ($page !== '' && preg_match("~$validHostnameRegex~", $page) == 1) {
 
-            $fileHeaders = @get_headers($page);
-            if(!$fileHeaders || $fileHeaders[0] == 'HTTP/1.1 404 Not Found') {
+            $pageHeaders = @get_headers($page);
+            if(!$pageHeaders || $pageHeaders[0] == 'HTTP/1.1 404 Not Found') {
                 $this->echoDefault();
             }
             else {
