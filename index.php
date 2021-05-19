@@ -7,5 +7,5 @@ spl_autoload_register(function($class) {
 
 $settings = new Settings;
 
-$proxy = new Proxy($settings->proxyDirParam, $settings->proxyPageParam, $settings->proxyGetPHP);
+$proxy = new Proxy($settings->proxyDirParam, $settings->proxyPageParam, $settings->proxyGetPHP, $settings->proxyGetParam);
 $proxy->show();

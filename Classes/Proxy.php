@@ -8,10 +8,11 @@ class Proxy {
     private $URL;
     private $pageHTML;
 
-    public function __construct($proxyDirParam = '/proxy', $proxyPageParam = 'proxy_page', $proxyGetPHP = 'get.php') {
+    public function __construct($proxyDirParam = '/proxy', $proxyPageParam = 'proxy_page', $proxyGetPHP = 'get.php', $proxyGetParam = 'u') {
         $this->params['proxyPageParam'] = $proxyPageParam;
         $this->params['proxyDirParam'] = $proxyDirParam;
         $this->params['getPHP'] = $proxyGetPHP;
+        $this->params['proxyGetParam'] = $proxyGetParam;
         $this->util = new Util($proxyPageParam);
     }
 
@@ -38,14 +39,14 @@ class Proxy {
                 $this->pageHTML = preg_replace_callback("~<(img|script|link|input|meta)(\s[^>]*?\s*)(href|src|content)=['\"]?([^>'\"\s]*)(\.)?(jpeg|jpg|gif|png|svg|css|js|ico)([^>'\"\s]*)['\"\s]?([^>]*)>~im", function($m) use($util) {
                     $src = $m[4].$m[5].$m[6].$m[7];
                     $src = $util->replaceLink($src);
-                    return "<{$m[1]}{$m[2]}{$m[3]}=\"{$this->params['proxyDirParam']}/{$this->params['getPHP']}?u=$src\"{$m[8]}>";
+                    return "<{$m[1]}{$m[2]}{$m[3]}=\"{$this->params['proxyDirParam']}/{$this->params['getPHP']}?{$this->params['proxyGetParam']}=$src\"{$m[8]}>";
                 }, $this->pageHTML);
 
                 //proxy style="... url() ..."
                 $this->pageHTML = preg_replace_callback("~<([^>]*)style=['\"]?([^>'\"]*)url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|ico)([^>'\"\s\)]*)\)([^>\"\']*)['\"]?([^>]*)>~im", function($m) use($util) {
                     $src = $m[3].'.'.$m[4].$m[5];
                     $src = $util->replaceLink($src);                
-                    return "<{$m[1]}style=\"{$m[2]}url({$this->params['proxyDirParam']}/{$this->params['getPHP']}?u=$src){$m[6]}\"{$m[7]}>";
+                    return "<{$m[1]}style=\"{$m[2]}url({$this->params['proxyDirParam']}/{$this->params['getPHP']}?{$this->params['proxyGetParam']}=$src){$m[6]}\"{$m[7]}>";
                 }, $this->pageHTML);
 
                 //proxy <style>: { }...url() ...}"
@@ -56,7 +57,7 @@ class Proxy {
                         $style = preg_replace_callback("~url(\s)*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg|ico)\)~im", function($mi) use($util) {
                             $src = $mi[2] . '.' . $mi[3];
                             $src = $util->replaceLink($src);
-                            return "url(\"{$this->params['proxyDirParam']}/{$this->params['getPHP']}?u=$src\")";
+                            return "url(\"{$this->params['proxyDirParam']}/{$this->params['getPHP']}?{$this->params['proxyGetParam']}=$src\")";
                         }, $style);
                     }
                     return "<style$add>$style</style>";

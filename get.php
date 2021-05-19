@@ -4,10 +4,12 @@ spl_autoload_register(function($class) {
     require_once "Classes/$class.php";
 });
 
-if (isset($_GET['u'])) {
+$settings = new Settings;
+
+if (isset($_GET[$settings->proxyGetParam])) {
     $validFileRegex = "^(https?://)?([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,350}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9/]))*";
 
-    $filename = $_GET['u'];
+    $filename = $_GET[$settings->proxyGetParam];
     if (empty($filename) || preg_match("~$validFileRegex~", $filename) != 1)
         return;
         
@@ -42,17 +44,16 @@ if (isset($_GET['u'])) {
         $contents = $snoopy->getResults();
 
         if ($type === 'css') {
-            
-            $settings = new Settings;
             $util = new Util($settings->proxyPageParam);
 
             $filename = $util->getURL($filename);
 
             $proxyGetPHP = $settings->proxyGetPHP;
-            $contents = preg_replace_callback("~url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg)~im", function($m) use($util, $proxyGetPHP) {
+            $proxyGetParam = $settings->proxyGetParam;
+            $contents = preg_replace_callback("~url\s*\(([^>'\"\s]*)\.(jpeg|jpg|gif|png|svg)~im", function($m) use($util, $proxyGetPHP, $proxyGetParam) {
                 $src = $m[1] . '.' . $m[2];                
                 $src = $util->replaceLink($src);                
-                return "url({$util->params['proxyPageParam']}/$proxyGetPHP?u=$src";
+                return "url({$util->params['proxyPageParam']}/$proxyGetPHP?$proxyGetParam=$src";
             }, $contents);
         }
         header("Content-type: $ct/$type");
